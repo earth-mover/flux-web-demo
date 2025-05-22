@@ -1,7 +1,5 @@
 import Map, { Layer, Source, useControl } from 'react-map-gl/maplibre';
 import { MapboxOverlay as DeckOverlay, MapboxOverlayProps } from '@deck.gl/mapbox';
-import { BitmapLayer } from '@deck.gl/layers';
-import { TileLayer } from '@deck.gl/geo-layers';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Layer as DeckLayer } from '@deck.gl/core';
 
@@ -20,9 +18,6 @@ function createGfsWmsUrlTemplate({
         ',',
     )}&width=${tileSize}&height=${tileSize}&tile={x},{y},{z}&crs=EPSG:3857&styles=raster/${colorPalette}`;
 }
-
-const GFS_TEMPERATURE_URL =
-    'https://compute.earthmover.io/v1/services/wms/earthmover-demos/dyanmical-gfs-analysis/main/wms?version=1.3.0&service=WMS&request=GetMap&layers=temperature_2m&colorscalerange=-40,40&width=512&height=512&tile={x},{y},{z}&crs=EPSG:3857&styles=raster/gist_earth';
 
 function DeckGLOverlay(props: MapboxOverlayProps) {
     const overlay = useControl((context) => {

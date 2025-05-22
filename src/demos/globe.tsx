@@ -1,7 +1,9 @@
-import Map, { Layer, Source, useControl } from 'react-map-gl/maplibre';
+import Map, { useControl } from 'react-map-gl/maplibre';
 import { MapboxOverlay as DeckOverlay, MapboxOverlayProps } from '@deck.gl/mapbox';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Layer as DeckLayer } from '@deck.gl/core';
+import { BitmapLayer } from '@deck.gl/layers';
+import { TileLayer } from '@deck.gl/geo-layers';
 import { useQuery } from '@tanstack/react-query';
 import * as WeatherLayers from 'weatherlayers-gl';
 
@@ -137,19 +139,42 @@ export default function Globe() {
             }),
     });
 
-    const layers: DeckLayer[] = data
-        ? [
-              new WeatherLayers.ParticleLayer({
-                  id: 'gfs-wind',
-                  image: data,
-                  imageType: 'VECTOR',
-                  imageUnscale: [-40, 40],
-                  maxAge: 10,
-                  speedFactor: 3.0,
-                  numParticles: 6000,
-              }),
-          ]
-        : [];
+    const layers: DeckLayer[] = [
+        new TileLayer({
+            id: 'gfs-temperature',
+            data: createGfsWmsUrlTemplate({
+                colorPalette: 'jet',
+                colorScaleRange: [-40, 40],
+                layer: 'temperature_2m',
+                tileWidth: 512,
+                tileHeight: 512,
+            }),
+            tileSize: 512,
+            maxZoom: 15,
+            opacity: 0.2,
+            refinementStrategy: 'no-overlap',
+            parameters: {
+                depthTest: false,
+            },
+            renderSubLayers: (props) => {
+                const [[west, south], [east, north]] = props.tile.boundingBox;
+                const { data, ...otherProps } = props;
+                return new BitmapLayer(otherProps, {
+                    image: data,
+                    bounds: [west, south, east, north],
+                });
+            },
+        }),
+        new WeatherLayers.ParticleLayer({
+            id: 'gfs-wind',
+            image: data,
+            imageType: 'VECTOR',
+            imageUnscale: [-40, 40],
+            maxAge: 10,
+            speedFactor: 3.0,
+            numParticles: 6000,
+        }),
+    ];
 
     return (
         <main className="h-screen w-screen">
@@ -176,27 +201,7 @@ export default function Globe() {
                     'atmosphere-blend': 0.3,
                 }}
             >
-                <DeckGLOverlay layers={layers} interleaved />
-                <Source
-                    id={'gfs-temperature'}
-                    type="raster"
-                    tiles={[
-                        createGfsWmsUrlTemplate({
-                            colorPalette: 'jet',
-                            colorScaleRange: [-40, 40],
-                            layer: 'temperature_2m',
-                            tileWidth: 512,
-                            tileHeight: 512,
-                        }),
-                    ]}
-                >
-                    <Layer
-                        id={'gfs-temperature'}
-                        type="raster"
-                        source={'gfs-temperature'}
-                        paint={{ 'raster-opacity': 0.5 }}
-                    />
-                </Source>
+                <DeckGLOverlay layers={layers} interleaved={false} />
             </Map>
         </main>
     );

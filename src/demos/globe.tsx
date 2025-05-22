@@ -119,16 +119,12 @@ async function fetchGlobalGfsWindParticleData({
 }
 
 function DeckGLOverlay(props: MapboxOverlayProps) {
-    const overlay = useControl((context) => {
-        console.log(context.map.getStyle());
-        return new DeckOverlay(props);
-    });
+    const overlay = useControl(() => new DeckOverlay(props));
     overlay.setProps(props);
     return null;
 }
 
 export default function Globe() {
-    const [isLoaded, setIsLoaded] = useState(false);
     const [clickedPoint, setClickedPoint] = useState<{ longitude: number; latitude: number } | null>(null);
     const { data } = useQuery({
         queryKey: ['gfs-wind-bipped'],

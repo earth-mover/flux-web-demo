@@ -1,11 +1,10 @@
-import Map, { useControl } from 'react-map-gl/maplibre';
+import Map, { Layer, Marker, Source, useControl } from 'react-map-gl/maplibre';
 import { MapboxOverlay as DeckOverlay, MapboxOverlayProps } from '@deck.gl/mapbox';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Layer as DeckLayer } from '@deck.gl/core';
-import { BitmapLayer } from '@deck.gl/layers';
-import { TileLayer } from '@deck.gl/geo-layers';
 import { useQuery } from '@tanstack/react-query';
 import * as WeatherLayers from 'weatherlayers-gl';
+import { useState } from 'react';
 
 /**
  * Creates a WMS URL template for fetching GFS wind data from Flux
@@ -129,6 +128,8 @@ function DeckGLOverlay(props: MapboxOverlayProps) {
 }
 
 export default function Globe() {
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [clickedPoint, setClickedPoint] = useState<{ longitude: number; latitude: number } | null>(null);
     const { data } = useQuery({
         queryKey: ['gfs-wind-bipped'],
         queryFn: async () =>
@@ -140,32 +141,38 @@ export default function Globe() {
     });
 
     const layers: DeckLayer[] = [
-        new TileLayer({
-            id: 'gfs-temperature',
-            data: createGfsWmsUrlTemplate({
-                colorPalette: 'jet',
-                colorScaleRange: [-40, 40],
-                layer: 'temperature_2m',
-                tileWidth: 512,
-                tileHeight: 512,
-            }),
-            tileSize: 512,
-            maxZoom: 15,
-            opacity: 0.2,
-            refinementStrategy: 'no-overlap',
-            parameters: {
-                depthTest: false,
-            },
-            beforeId: 'gfs-wind',
-            renderSubLayers: (props) => {
-                const [[west, south], [east, north]] = props.tile.boundingBox;
-                const { data, ...otherProps } = props;
-                return new BitmapLayer(otherProps, {
-                    image: data,
-                    bounds: [west, south, east, north],
-                });
-            },
-        }),
+        // new TileLayer({
+        //     id: 'gfs-temperature',
+        //     data: createGfsWmsUrlTemplate({
+        //         colorPalette: 'jet',
+        //         colorScaleRange: [-40, 40],
+        //         layer: 'temperature_2m',
+        //         tileWidth: 512,
+        //         tileHeight: 512,
+        //     }),
+        //     tileSize: 512,
+        //     maxZoom: 15,
+        //     opacity: 0.2,
+        //     refinementStrategy: 'no-overlap',
+        //     parameters: {
+        //         depthTest: false,
+        //     },
+        //     beforeId: 'housenumber',
+        //     pickable: true,
+        //     onClick: (info) => {
+        //         if (info?.coordinate) {
+        //             setClickedPoint({ longitude: info.coordinate[0], latitude: info.coordinate[1] });
+        //         }
+        //     },
+        //     renderSubLayers: (props) => {
+        //         const [[west, south], [east, north]] = props.tile.boundingBox;
+        //         const { data, ...otherProps } = props;
+        //         return new BitmapLayer(otherProps, {
+        //             image: data,
+        //             bounds: [west, south, east, north],
+        //         });
+        //     },
+        // }),
         new WeatherLayers.ParticleLayer({
             id: 'gfs-wind',
             image: data,
@@ -183,7 +190,7 @@ export default function Globe() {
                 initialViewState={{
                     longitude: -100,
                     latitude: 30,
-                    zoom: 3,
+                    zoom: 2,
                 }}
                 style={{
                     width: '100%',
@@ -201,8 +208,27 @@ export default function Globe() {
                     'fog-ground-blend': 0.5,
                     'atmosphere-blend': 0.3,
                 }}
+                onClick={(e) => setClickedPoint({ longitude: e.lngLat.lng, latitude: e.lngLat.lat })}
             >
                 <DeckGLOverlay layers={layers} interleaved={false} />
+                <Source
+                    id="gfs-temperature"
+                    maxzoom={10}
+                    type="raster"
+                    tileSize={512}
+                    tiles={[
+                        createGfsWmsUrlTemplate({
+                            colorPalette: 'jet',
+                            colorScaleRange: [-40, 40],
+                            layer: 'temperature_2m',
+                            tileWidth: 512,
+                            tileHeight: 512,
+                        }),
+                    ]}
+                >
+                    <Layer id="gfs-temperature" type="raster" paint={{ 'raster-opacity': 0.4 }} />
+                </Source>
+                {clickedPoint && <Marker longitude={clickedPoint.longitude} latitude={clickedPoint.latitude} />}
             </Map>
         </main>
     );

@@ -42,6 +42,19 @@
 }
 
 :root {
+  --midnight: #201F2C;
+  --violet: #A653FF;
+  --lime: #B7E400;
+  --light-grey: #F5F5F5;
+  --dark-gray: #787878;
+  --dark-violet: #6D0EDB;
+  --light-violet: #C396F9;
+  --red: #FF6554;
+  --orange: #FF9E0D;
+  --green: #31D495;
+  --blue: #5EC4F7;
+  --pink: #F881D1;
+
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.13 0.028 261.692);

@@ -156,6 +156,7 @@ export default function Globe() {
             parameters: {
                 depthTest: false,
             },
+            beforeId: 'gfs-wind',
             renderSubLayers: (props) => {
                 const [[west, south], [east, north]] = props.tile.boundingBox;
                 const { data, ...otherProps } = props;

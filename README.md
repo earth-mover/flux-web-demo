@@ -27,6 +27,8 @@ The globe is interactive and allows to click on a point to get a timeseries of t
 This demo uses Flux [`WMS`](https://docs.earthmover.io/flux/wms) and [`EDR`](https://docs.earthmover.io/flux/edr) endpoints to fetch the data:
 
 * [WMS GetMap](https://docs.earthmover.io/flux/wms#getmap) requests for showing the temperature and wind data on the globe
+* [WMS GetMetadata](https://docs.earthmover.io/flux/wms#metadata-queries) requests for fetching the min and max values of the temperature data to automatically set the color scale range
+* WMS GetLegendGraphic requests for fetching the legend image
 * [EDR position](https://docs.earthmover.io/flux/edr#position-queries) requests for fetching the timeseries data
 
 ## Development

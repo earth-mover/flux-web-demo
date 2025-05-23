@@ -415,7 +415,7 @@ function Legend({
                         <SelectTrigger className="w-[200px]">
                             <div className="flex items-center gap-2">
                                 <img
-                                    className="opacity-80 rounded-4xl h-4 w-32"
+                                    className="opacity-80 rounded-4xl h-4 w-full"
                                     src={createGfsWmsLegendUrlTemplate({
                                         layer: 'temperature_2m',
                                         colorPalette,
@@ -425,7 +425,6 @@ function Legend({
                                     })}
                                     alt={`${colorPalette} color palette`}
                                 />
-                                <span className="capitalize">{colorPalette}</span>
                             </div>
                         </SelectTrigger>
                         <SelectContent>

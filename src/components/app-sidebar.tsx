@@ -69,7 +69,7 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton asChild className="flex flex-row items-center gap-2">
                             <Link
-                                to="https://github.com/earthmover-io/flux-web-demos"
+                                to="https://github.com/earth-mover/flux-web-demos"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >

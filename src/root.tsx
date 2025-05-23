@@ -50,7 +50,7 @@ export default function Root() {
                     </Breadcrumb>
                 </div>
             </div>
-            <main>
+            <main className="flex flex-col flex-1">
                 <Outlet />
             </main>
         </SidebarProvider>

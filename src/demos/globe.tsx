@@ -12,6 +12,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Area } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { useSearchParams } from 'react-router';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 
 /**
  * Creates a WMS URL template for fetching GFS wind data from Flux
@@ -33,6 +34,7 @@ function createGfsWmsUrlTemplate({
     x,
     y,
     z,
+    time,
 }: {
     colorPalette: string;
     colorScaleRange: [number, number];
@@ -42,13 +44,32 @@ function createGfsWmsUrlTemplate({
     x?: number;
     y?: number;
     z?: number;
+    time: string;
 }): string {
     const xx = x ?? '{x}';
     const yy = y ?? '{y}';
     const zz = z ?? '{z}';
     return `https://compute.earthmover.io/v1/services/wms/earthmover-demos/dyanmical-gfs-analysis/main/wms?version=1.3.0&service=WMS&request=GetMap&layers=${layer}&colorscalerange=${colorScaleRange.join(
         ',',
-    )}&width=${tileWidth}&height=${tileHeight}&tile=${xx},${yy},${zz}&crs=EPSG:3857&styles=raster/${colorPalette}`;
+    )}&width=${tileWidth}&height=${tileHeight}&tile=${xx},${yy},${zz}&crs=EPSG:3857&styles=raster/${colorPalette}&time=${time}`;
+}
+
+function createGfsWmsLegendUrlTemplate({
+    layer,
+    colorPalette,
+    colorScaleRange,
+    width,
+    height,
+}: {
+    layer: 'temperature_2m' | 'wind_u_10m' | 'wind_v_10m';
+    colorPalette: string;
+    colorScaleRange: [number, number];
+    width: number;
+    height: number;
+}) {
+    return `https://compute.earthmover.io/v1/services/wms/earthmover-demos/dyanmical-gfs-analysis/main/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&layername=${layer}&format=image/png&width=${width}&height=${height}&colorscalerange=${colorScaleRange.join(
+        ',',
+    )}&styles=raster/${colorPalette}`;
 }
 
 function createGfsPointTimeseriesUrlTemplate({
@@ -65,6 +86,34 @@ function createGfsPointTimeseriesUrlTemplate({
     return `https://compute.earthmover.io/v1/services/edr/earthmover-demos/dyanmical-gfs-analysis/main/edr/position?coords=POINT(${longitude}%20${latitude})&time=2015-05-01T00:00:00/2015-06-01T00:00:00&f=cf_covjson&parameter-name=${layers.join(
         ',',
     )}&f=${format}`;
+}
+
+function createGfsMinMaxUrlTemplate({
+    layers,
+    time,
+}: {
+    layers: ('temperature_2m' | 'wind_u_10m' | 'wind_v_10m')[];
+    time: string;
+}) {
+    return `https://compute.earthmover.io/v1/services/wms/earthmover-demos/dyanmical-gfs-analysis/main/wms?version=1.3.0&service=WMS&request=GetMetadata&layername=${layers.join(
+        ',',
+    )}&item=minmax&time=${time}`;
+}
+
+async function fetchMinMaxData({
+    layers,
+    time,
+}: {
+    layers: ('temperature_2m' | 'wind_u_10m' | 'wind_v_10m')[];
+    time: string;
+}): Promise<[number, number]> {
+    const url = createGfsMinMaxUrlTemplate({
+        layers,
+        time,
+    });
+    const response = await fetch(url);
+    const data = await response.json();
+    return [data.min, data.max];
 }
 
 async function fetchTimeseriesData({
@@ -106,10 +155,12 @@ async function fetchGlobalGfsWindParticleData({
     dataRange,
     imageWidth,
     imageHeight,
+    time,
 }: {
     dataRange: [number, number];
     imageWidth: number;
     imageHeight: number;
+    time: string;
 }) {
     const uwindUrl = createGfsWmsUrlTemplate({
         colorPalette: 'Greys_r',
@@ -120,6 +171,7 @@ async function fetchGlobalGfsWindParticleData({
         x: 0,
         y: 0,
         z: 0,
+        time,
     });
     const vwindUrl = createGfsWmsUrlTemplate({
         colorPalette: 'Greys_r',
@@ -130,6 +182,7 @@ async function fetchGlobalGfsWindParticleData({
         x: 0,
         y: 0,
         z: 0,
+        time,
     });
     const [uwind, vwind] = await Promise.all([fetch(uwindUrl), fetch(vwindUrl)]);
     const [uwindData, vwindData] = await Promise.all([uwind.arrayBuffer(), vwind.arrayBuffer()]);
@@ -328,9 +381,91 @@ function TimeseriesDrawer({
     );
 }
 
+function Legend({
+    time,
+    colorPalette,
+    colorScaleRange,
+    isLoadingAutoScale,
+    onAutoScale,
+    onColorPaletteChange,
+}: {
+    time: string;
+    colorPalette: string;
+    colorScaleRange: [number, number];
+    isLoadingAutoScale: boolean;
+    onAutoScale: () => void;
+    onColorPaletteChange: (palette: string) => void;
+}) {
+    return (
+        <div className="absolute bottom-16 right-4 bg-[var(--background)] p-2 rounded-md">
+            <div className="flex flex-col gap-2">
+                <div className="flex flex-row gap-2 items-center justify-between py-2">
+                    <div className="flex flex-col items-start">
+                        <span>2 Meter Air Temperature (°C)</span>
+                        <span className="text-sm text-muted-foreground">Valid: {time}</span>
+                    </div>
+                    <Button variant="outline" className="w-24" onClick={onAutoScale} disabled={isLoadingAutoScale} >
+                        {isLoadingAutoScale ? <LoadingSpinner className="m-auto" /> : 'Autoscale'}
+                        <span className="sr-only">Autoscale</span>
+                    </Button>
+                </div>
+                <div className="flex flex-row gap-2 items-center">
+                    <span>{colorScaleRange[0].toFixed(0)}°C</span>
+                    <Select value={colorPalette} onValueChange={onColorPaletteChange}>
+                        <SelectTrigger className="w-[200px]">
+                            <div className="flex items-center gap-2">
+                                <img
+                                    className="opacity-80 rounded-4xl h-4 w-32"
+                                    src={createGfsWmsLegendUrlTemplate({
+                                        layer: 'temperature_2m',
+                                        colorPalette,
+                                        colorScaleRange,
+                                        width: 200,
+                                        height: 20,
+                                    })}
+                                    alt={`${colorPalette} color palette`}
+                                />
+                                <span className="capitalize">{colorPalette}</span>
+                            </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                            {['jet', 'viridis', 'plasma', 'magma', 'inferno', 'Blues', 'Reds', 'rainbow', 'Greys'].map(
+                                (palette) => (
+                                    <SelectItem key={palette} value={palette}>
+                                        <div className="flex items-center gap-2">
+                                            <img
+                                                className="opacity-80 rounded-4xl h-4 w-32"
+                                                src={createGfsWmsLegendUrlTemplate({
+                                                    layer: 'temperature_2m',
+                                                    colorPalette: palette,
+                                                    colorScaleRange,
+                                                    width: 200,
+                                                    height: 20,
+                                                })}
+                                                alt={`${palette} color palette`}
+                                            />
+                                            <span className="capitalize">{palette}</span>
+                                        </div>
+                                    </SelectItem>
+                                ),
+                            )}
+                        </SelectContent>
+                    </Select>
+                    <span>{colorScaleRange[1].toFixed(0)}°C</span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function Globe() {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
+    const [time, _setTime] = useState('2015-06-01T00:00:00Z');
+    const [colorPalette, setColorPalette] = useState('jet');
+    const [colorScaleRange, setColorScaleRange] = useState<[number, number]>([-40, 40]);
+    const [isLoadingAutoScale, setIsLoadingAutoScale] = useState(false);
+
     const clickedPoint = useMemo(() => {
         const lat = searchParams.get('lat');
         const lng = searchParams.get('lng');
@@ -343,6 +478,7 @@ export default function Globe() {
                 dataRange: [-40, 40],
                 imageWidth: 1440,
                 imageHeight: 720,
+                time,
             }),
     });
 
@@ -359,38 +495,6 @@ export default function Globe() {
     });
 
     const layers: DeckLayer[] = [
-        // new TileLayer({
-        //     id: 'gfs-temperature',
-        //     data: createGfsWmsUrlTemplate({
-        //         colorPalette: 'jet',
-        //         colorScaleRange: [-40, 40],
-        //         layer: 'temperature_2m',
-        //         tileWidth: 512,
-        //         tileHeight: 512,
-        //     }),
-        //     tileSize: 512,
-        //     maxZoom: 15,
-        //     opacity: 0.2,
-        //     refinementStrategy: 'no-overlap',
-        //     parameters: {
-        //         depthTest: false,
-        //     },
-        //     beforeId: 'housenumber',
-        //     pickable: true,
-        //     onClick: (info) => {
-        //         if (info?.coordinate) {
-        //             setClickedPoint({ longitude: info.coordinate[0], latitude: info.coordinate[1] });
-        //         }
-        //     },
-        //     renderSubLayers: (props) => {
-        //         const [[west, south], [east, north]] = props.tile.boundingBox;
-        //         const { data, ...otherProps } = props;
-        //         return new BitmapLayer(otherProps, {
-        //             image: data,
-        //             bounds: [west, south, east, north],
-        //         });
-        //     },
-        // }),
         new WeatherLayers.ParticleLayer({
             id: 'gfs-wind',
             image: gfsWindBippedData,
@@ -422,7 +526,7 @@ export default function Globe() {
     }, [clickedPoint]);
 
     return (
-        <main className="h-screen w-screen">
+        <section className="flex flex-col flex-1">
             <TimeseriesDrawer
                 drawerOpen={drawerOpen}
                 setDrawerOpen={setDrawerOpen}
@@ -431,7 +535,7 @@ export default function Globe() {
                     data: timeseriesData?.data ?? [],
                     isLoading: timeseriesDataIsLoading,
                 }}
-                onClose={() => setSearchParams({},)}
+                onClose={() => setSearchParams({})}
             />
             <Map
                 initialViewState={{
@@ -440,8 +544,7 @@ export default function Globe() {
                     zoom: 2,
                 }}
                 style={{
-                    width: '100%',
-                    height: '100%',
+                    flex: 1,
                     background: 'radial-gradient(circle at center, var(--blue) 0%, var(--midnight) 70%)',
                 }}
                 mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
@@ -465,11 +568,12 @@ export default function Globe() {
                     tileSize={512}
                     tiles={[
                         createGfsWmsUrlTemplate({
-                            colorPalette: 'jet',
-                            colorScaleRange: [-40, 40],
+                            colorPalette: colorPalette,
+                            colorScaleRange: colorScaleRange,
                             layer: 'temperature_2m',
                             tileWidth: 512,
                             tileHeight: 512,
+                            time,
                         }),
                     ]}
                 >
@@ -477,6 +581,31 @@ export default function Globe() {
                 </Source>
                 {clickedPoint && <Marker longitude={clickedPoint.longitude} latitude={clickedPoint.latitude} />}
             </Map>
-        </main>
+            <Legend
+                time={time}
+                colorPalette={colorPalette}
+                colorScaleRange={colorScaleRange}
+                isLoadingAutoScale={isLoadingAutoScale}
+                onAutoScale={() => {
+                    setIsLoadingAutoScale(true);
+                    fetchMinMaxData({
+                        layers: ['temperature_2m'],
+                        time,
+                    })
+                        .then(([min, max]) => {
+                            setColorScaleRange([min, max]);
+                        })
+                        .catch((e) => {
+                            console.error('Failed to fetch min max data', e);
+                        })
+                        .finally(() => {
+                            setIsLoadingAutoScale(false);
+                        });
+                }}
+                onColorPaletteChange={(palette) => {
+                    setColorPalette(palette);
+                }}
+            />
+        </section>
     );
 }

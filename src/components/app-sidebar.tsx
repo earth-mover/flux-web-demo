@@ -11,6 +11,7 @@ import { Earth, Github } from 'lucide-react';
 import { Link } from 'react-router';
 import { Separator } from './ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { Badge } from './ui/badge';
 
 const DEMOS = [
     {
@@ -19,6 +20,7 @@ const DEMOS = [
         path: '/gfs-globe',
         description:
             'An interactive MaplibreGL Globe displaying GFS Temperature and Wind data. Click on the globe to view the timeseries of the temperature at the selected location.',
+        tags: ['WMS', 'EDR', 'MapLibre', 'DeckGL'],
     },
 ];
 
@@ -39,7 +41,7 @@ export function AppSidebar() {
                         </div>
                         <Separator className="my-2" />
                     </SidebarHeader>
-                    {DEMOS.map(({ title, path, icon, description }) => {
+                    {DEMOS.map(({ title, path, icon, description, tags }) => {
                         return (
                             <Tooltip key={path}>
                                 <TooltipTrigger className="w-full">
@@ -57,10 +59,19 @@ export function AppSidebar() {
                                     </SidebarMenu>
                                 </TooltipTrigger>
                                 <TooltipContent className="text-white w-64 text-wrap">
-                                    <p className="text-sm">{description}</p>
+                                    <div className="flex flex-col gap-2">
+                                        <p className="text-sm">{description}</p>
+                                        <div className="flex flex-row gap-2 flex-wrap">
+                                            {tags.map((tag) => (
+                                                <Badge key={tag} variant="outline" className="text-xs text-white bg-[var(--dark-violet)]">
+                                                    {tag}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </TooltipContent>
                             </Tooltip>
-                        );
+                        );  
                     })}
                 </div>
             </SidebarContent>

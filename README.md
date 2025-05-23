@@ -6,7 +6,7 @@ A collection of demos how Flux APIs can be used to build web applications with W
 
 ### Globe
 
-[Try the demo](https://flux-web-demo.vercel.app)
+[Try the demo](https://flux-web-demo.vercel.app/gfs-globe)
 
 [See the code](https://github.com/earth-mover/flux-web-demo/blob/main/src/demos/globe.tsx)
 

@@ -4,13 +4,14 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { Layer as DeckLayer } from '@deck.gl/core';
 import { useQuery } from '@tanstack/react-query';
 import * as WeatherLayers from 'weatherlayers-gl';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Area } from 'recharts';
 import { Button } from '@/components/ui/button';
+import { useSearchParams } from 'react-router';
 
 /**
  * Creates a WMS URL template for fetching GFS wind data from Flux
@@ -180,12 +181,15 @@ function TimeseriesDrawer({
     setDrawerOpen,
     selectedPoint,
     timeseriesData,
+    onClose,
 }: {
     drawerOpen: boolean;
     setDrawerOpen: (open: boolean) => void;
-    selectedPoint: { longitude: number; latitude: number };
+    selectedPoint: { longitude: number; latitude: number } | null;
     timeseriesData: { data: { time: number; value: number }[]; isLoading: boolean };
+    onClose: () => void;
 }) {
+    if (!selectedPoint) return null;
     const covjsonUrl = createGfsPointTimeseriesUrlTemplate({
         layers: ['temperature_2m'],
         latitude: selectedPoint.latitude,
@@ -217,7 +221,7 @@ function TimeseriesDrawer({
         format: 'nc',
     });
     return (
-        <Drawer open={drawerOpen} modal={false} onOpenChange={setDrawerOpen}>
+        <Drawer open={drawerOpen} modal={false} onOpenChange={setDrawerOpen} onClose={onClose}>
             <DrawerContent>
                 <DrawerHeader className="flex flex-row justify-between items-start align-middle w-full">
                     <div className="flex flex-col items-start gap-2">
@@ -258,15 +262,17 @@ function TimeseriesDrawer({
                             </Button>
                         </div>
                     </div>
-                    <DrawerTrigger onClick={() => setDrawerOpen(false)}>Close</DrawerTrigger>
+                    <DrawerTrigger className="cursor-pointer" onClick={onClose}>
+                        Close
+                    </DrawerTrigger>
                 </DrawerHeader>
                 {timeseriesData.isLoading && (
-                    <div className="h-96 flex justify-center items-center">
+                    <div className="h-48 flex justify-center items-center">
                         <LoadingSpinner className="m-auto" />
                     </div>
                 )}
                 {timeseriesData.data && timeseriesData.data.length > 0 && (
-                    <ChartContainer config={{}} className="h-96">
+                    <ChartContainer config={{}} className="h-48">
                         <AreaChart
                             accessibilityLayer
                             data={timeseriesData.data}
@@ -324,7 +330,12 @@ function TimeseriesDrawer({
 
 export default function Globe() {
     const [drawerOpen, setDrawerOpen] = useState(false);
-    const [clickedPoint, setClickedPoint] = useState<{ longitude: number; latitude: number } | null>(null);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const clickedPoint = useMemo(() => {
+        const lat = searchParams.get('lat');
+        const lng = searchParams.get('lng');
+        return lat && lng ? { latitude: parseFloat(lat), longitude: parseFloat(lng) } : null;
+    }, [searchParams]);
     const { data: gfsWindBippedData } = useQuery({
         queryKey: ['gfs-wind-bipped'],
         queryFn: async () =>
@@ -406,6 +417,10 @@ export default function Globe() {
         }
     }, [drawerOpen]);
 
+    useEffect(() => {
+        setDrawerOpen(clickedPoint !== null);
+    }, [clickedPoint]);
+
     return (
         <main className="h-screen w-screen">
             <TimeseriesDrawer
@@ -415,13 +430,13 @@ export default function Globe() {
                 timeseriesData={{
                     data: timeseriesData?.data ?? [],
                     isLoading: timeseriesDataIsLoading,
-                    url: timeseriesData?.url,
                 }}
+                onClose={() => setSearchParams({},)}
             />
             <Map
                 initialViewState={{
-                    longitude: -100,
-                    latitude: 30,
+                    longitude: clickedPoint?.longitude ?? -100,
+                    latitude: clickedPoint?.latitude ?? 30,
                     zoom: 2,
                 }}
                 style={{
@@ -440,10 +455,7 @@ export default function Globe() {
                     'fog-ground-blend': 0.5,
                     'atmosphere-blend': 0.3,
                 }}
-                onClick={(e) => {
-                    setClickedPoint({ longitude: e.lngLat.lng, latitude: e.lngLat.lat });
-                    setDrawerOpen(true);
-                }}
+                onClick={(e) => setSearchParams({ lat: e.lngLat.lat.toString(), lng: e.lngLat.lng.toString() })}
             >
                 <DeckGLOverlay layers={layers} interleaved={false} />
                 <Source

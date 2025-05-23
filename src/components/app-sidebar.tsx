@@ -12,7 +12,6 @@ import { Link } from 'react-router';
 import { Separator } from './ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { Badge } from './ui/badge';
-import { Button } from './ui/button';
 
 const DEMOS = [
     {

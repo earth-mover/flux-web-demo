@@ -13,7 +13,7 @@ import { Button } from './components/ui/button';
 
 export default function Root() {
     const location = useLocation();
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const pathInfo = currentPathInfo(location.pathname);
 

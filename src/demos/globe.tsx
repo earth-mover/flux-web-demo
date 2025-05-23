@@ -463,7 +463,7 @@ export default function Globe() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [time, _setTime] = useState('2015-06-01T00:00:00Z');
     const [colorPalette, setColorPalette] = useState('jet');
-    const [colorScaleRange, setColorScaleRange] = useState<[number, number]>([-40, 40]);
+    const [colorScaleRange, setColorScaleRange] = useState<[number, number]>([-10, 10]);
     const [isLoadingAutoScale, setIsLoadingAutoScale] = useState(false);
 
     const clickedPoint = useMemo(() => {
@@ -577,7 +577,7 @@ export default function Globe() {
                         }),
                     ]}
                 >
-                    <Layer id="gfs-temperature" type="raster" paint={{ 'raster-opacity': 0.4 }} />
+                    <Layer id="gfs-temperature" type="raster" paint={{ 'raster-opacity': 0.6 }} />
                 </Source>
                 {clickedPoint && <Marker longitude={clickedPoint.longitude} latitude={clickedPoint.latitude} />}
             </Map>

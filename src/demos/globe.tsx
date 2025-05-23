@@ -4,7 +4,12 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { Layer as DeckLayer } from '@deck.gl/core';
 import { useQuery } from '@tanstack/react-query';
 import * as WeatherLayers from 'weatherlayers-gl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
+import { AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Area } from 'recharts';
 
 /**
  * Creates a WMS URL template for fetching GFS wind data from Flux
@@ -42,6 +47,45 @@ function createGfsWmsUrlTemplate({
     return `https://compute.earthmover.io/v1/services/wms/earthmover-demos/dyanmical-gfs-analysis/main/wms?version=1.3.0&service=WMS&request=GetMap&layers=${layer}&colorscalerange=${colorScaleRange.join(
         ',',
     )}&width=${tileWidth}&height=${tileHeight}&tile=${xx},${yy},${zz}&crs=EPSG:3857&styles=raster/${colorPalette}`;
+}
+
+function createGfsPointTimeseriesUrlTemplate({
+    layers,
+    latitude,
+    longitude,
+}: {
+    layers: ('temperature_2m' | 'wind_u_10m' | 'wind_v_10m')[];
+    latitude: number;
+    longitude: number;
+}): string {
+    return `https://compute.earthmover.io/v1/services/edr/earthmover-demos/dyanmical-gfs-analysis/main/edr/position?coords=POINT(${longitude}%20${latitude})&time=2015-05-01T00:00:00/2015-06-01T00:00:00&f=cf_covjson&parameter-name=${layers.join(
+        ',',
+    )}`;
+}
+
+async function fetchTimeseriesData({
+    layers,
+    latitude,
+    longitude,
+}: {
+    layers: ('temperature_2m' | 'wind_u_10m' | 'wind_v_10m')[];
+    latitude: number;
+    longitude: number;
+}): Promise<{ time: number; value: number }[]> {
+    const url = createGfsPointTimeseriesUrlTemplate({
+        layers,
+        latitude,
+        longitude,
+    });
+    const response = await fetch(url);
+    const data = await response.json();
+
+    const values = data.ranges[layers[0]].values as number[];
+
+    return values.map((value, index) => ({
+        time: new Date(data.domain.axes.t.values[index] + 'Z').getTime(),
+        value,
+    }));
 }
 
 /**
@@ -124,9 +168,95 @@ function DeckGLOverlay(props: MapboxOverlayProps) {
     return null;
 }
 
+function TimeseriesDrawer({
+    drawerOpen,
+    setDrawerOpen,
+    selectedPoint,
+    timeseriesData,
+}: {
+    drawerOpen: boolean;
+    setDrawerOpen: (open: boolean) => void;
+    selectedPoint: { longitude: number; latitude: number };
+    timeseriesData: { data: { time: number; value: number }[]; isLoading: boolean };
+}) {
+    return (
+        <Drawer open={drawerOpen} modal={false} onOpenChange={setDrawerOpen}>
+            <DrawerContent>
+                <DrawerHeader className="flex flex-row justify-between items-start align-middle w-full">
+                    <div className="flex flex-col items-start">
+                        <DrawerTitle>2 Meter Air Temperature (°C)</DrawerTitle>
+                        <p>
+                            Location: {selectedPoint?.latitude.toFixed(2)}°, {selectedPoint?.longitude.toFixed(2)}°
+                        </p>
+                    </div>
+                    <DrawerTrigger onClick={() => setDrawerOpen(false)}>Close</DrawerTrigger>
+                </DrawerHeader>
+                {timeseriesData.isLoading && (
+                    <div className="h-96 flex justify-center items-center">
+                        <LoadingSpinner className="m-auto" />
+                    </div>
+                )}
+                {timeseriesData.data && timeseriesData.data.length > 0 && (
+                    <ChartContainer config={{}} className="h-96">
+                        <AreaChart
+                            accessibilityLayer
+                            data={timeseriesData.data}
+                            margin={{
+                                top: 5,
+                                left: 5,
+                                right: 0,
+                                bottom: 5,
+                            }}
+                        >
+                            <CartesianGrid />
+                            <XAxis
+                                dataKey="time"
+                                tickLine={false}
+                                axisLine={false}
+                                type="number"
+                                domain={[
+                                    timeseriesData.data[0].time,
+                                    timeseriesData.data[timeseriesData.data.length - 1].time,
+                                ]}
+                                tickMargin={8}
+                                tickFormatter={(value) => {
+                                    const date = new Date(value);
+                                    return date.toLocaleDateString('en-US', {
+                                        day: 'numeric',
+                                        month: 'numeric',
+                                    });
+                                }}
+                            />
+                            <YAxis tickLine={false} axisLine={false} tickMargin={8} orientation="right" />
+                            <Area dataKey="value" type="natural" fill="blue" fillOpacity={0.4} stroke="blue" />
+                            <ChartTooltip
+                                cursor={false}
+                                content={
+                                    <ChartTooltipContent
+                                        indicator="line"
+                                        labelFormatter={(_value, payload) => {
+                                            const date = new Date(payload[0].payload.time);
+                                            return date.toLocaleDateString('en-US', {
+                                                day: 'numeric',
+                                                month: 'short',
+                                                hour: 'numeric',
+                                            });
+                                        }}
+                                    />
+                                }
+                            />
+                        </AreaChart>
+                    </ChartContainer>
+                )}
+            </DrawerContent>
+        </Drawer>
+    );
+}
+
 export default function Globe() {
+    const [drawerOpen, setDrawerOpen] = useState(false);
     const [clickedPoint, setClickedPoint] = useState<{ longitude: number; latitude: number } | null>(null);
-    const { data } = useQuery({
+    const { data: gfsWindBippedData } = useQuery({
         queryKey: ['gfs-wind-bipped'],
         queryFn: async () =>
             await fetchGlobalGfsWindParticleData({
@@ -134,6 +264,18 @@ export default function Globe() {
                 imageWidth: 1440,
                 imageHeight: 720,
             }),
+    });
+
+    const { data: timeseriesData, isLoading: timeseriesDataIsLoading } = useQuery({
+        queryKey: ['timeseries', clickedPoint],
+        queryFn: async () => {
+            if (!clickedPoint) return null;
+            return await fetchTimeseriesData({
+                layers: ['temperature_2m'],
+                latitude: clickedPoint.latitude,
+                longitude: clickedPoint.longitude,
+            });
+        },
     });
 
     const layers: DeckLayer[] = [
@@ -171,7 +313,7 @@ export default function Globe() {
         // }),
         new WeatherLayers.ParticleLayer({
             id: 'gfs-wind',
-            image: data,
+            image: gfsWindBippedData,
             imageType: 'VECTOR',
             imageUnscale: [-40, 40],
             maxAge: 10,
@@ -180,8 +322,33 @@ export default function Globe() {
         }),
     ];
 
+    // Prevent drawer from blocking pointer events when open
+    // https://github.com/emilkowalski/vaul/issues/497#issuecomment-2457929052
+    useEffect(() => {
+        if (drawerOpen) {
+            // Pushing the change to the end of the call stack
+            const timer = setTimeout(() => {
+                document.body.style.pointerEvents = '';
+            }, 0);
+
+            return () => clearTimeout(timer);
+        } else {
+            document.body.style.pointerEvents = 'auto';
+        }
+    }, [drawerOpen]);
+
     return (
         <main className="h-screen w-screen">
+            <TimeseriesDrawer
+                drawerOpen={drawerOpen}
+                setDrawerOpen={setDrawerOpen}
+                selectedPoint={clickedPoint ?? { longitude: 0, latitude: 0 }}
+                timeseriesData={
+                    timeseriesDataIsLoading
+                        ? { data: [], isLoading: true }
+                        : { data: timeseriesData ?? [], isLoading: false }
+                }
+            />
             <Map
                 initialViewState={{
                     longitude: -100,
@@ -204,7 +371,10 @@ export default function Globe() {
                     'fog-ground-blend': 0.5,
                     'atmosphere-blend': 0.3,
                 }}
-                onClick={(e) => setClickedPoint({ longitude: e.lngLat.lng, latitude: e.lngLat.lat })}
+                onClick={(e) => {
+                    setClickedPoint({ longitude: e.lngLat.lng, latitude: e.lngLat.lat });
+                    setDrawerOpen(true);
+                }}
             >
                 <DeckGLOverlay layers={layers} interleaved={false} />
                 <Source

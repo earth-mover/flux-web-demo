@@ -12,6 +12,7 @@ import { Link } from 'react-router';
 import { Separator } from './ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 
 const DEMOS = [
     {
@@ -20,6 +21,7 @@ const DEMOS = [
         path: '/gfs-globe',
         description:
             'An interactive MaplibreGL Globe displaying GFS Temperature and Wind data. Click on the globe to view the timeseries of the temperature at the selected location.',
+        code: 'https://github.com/earth-mover/flux-web-demo/blob/main/src/demos/globe.tsx',
         tags: ['WMS', 'EDR', 'MapLibre', 'DeckGL'],
     },
 ];
@@ -41,7 +43,7 @@ export function AppSidebar() {
                         </div>
                         <Separator className="my-2" />
                     </SidebarHeader>
-                    {DEMOS.map(({ title, path, icon, description, tags }) => {
+                    {DEMOS.map(({ title, path, icon, description, tags, code }) => {
                         return (
                             <Tooltip key={path}>
                                 <TooltipTrigger className="w-full">
@@ -61,9 +63,21 @@ export function AppSidebar() {
                                 <TooltipContent className="text-white w-64 text-wrap">
                                     <div className="flex flex-col gap-2">
                                         <p className="text-sm">{description}</p>
+                                        <a
+                                            href={code}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-xs underline text-white hover:text-muted-foreground"
+                                        >
+                                            View Code on GitHub
+                                        </a>
                                         <div className="flex flex-row gap-2 flex-wrap">
                                             {tags.map((tag) => (
-                                                <Badge key={tag} variant="outline" className="text-xs text-white bg-[var(--dark-violet)]">
+                                                <Badge
+                                                    key={tag}
+                                                    variant="outline"
+                                                    className="text-xs text-white bg-[var(--dark-violet)]"
+                                                >
                                                     {tag}
                                                 </Badge>
                                             ))}
@@ -71,7 +85,7 @@ export function AppSidebar() {
                                     </div>
                                 </TooltipContent>
                             </Tooltip>
-                        );  
+                        );
                     })}
                 </div>
             </SidebarContent>

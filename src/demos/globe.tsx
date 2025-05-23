@@ -10,6 +10,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from 
 import { AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Area } from 'recharts';
+import { Button } from '@/components/ui/button';
 
 /**
  * Creates a WMS URL template for fetching GFS wind data from Flux
@@ -53,14 +54,16 @@ function createGfsPointTimeseriesUrlTemplate({
     layers,
     latitude,
     longitude,
+    format,
 }: {
     layers: ('temperature_2m' | 'wind_u_10m' | 'wind_v_10m')[];
     latitude: number;
     longitude: number;
+    format: 'cf_covjson' | 'csv' | 'nc' | 'geojson' | 'parquet';
 }): string {
     return `https://compute.earthmover.io/v1/services/edr/earthmover-demos/dyanmical-gfs-analysis/main/edr/position?coords=POINT(${longitude}%20${latitude})&time=2015-05-01T00:00:00/2015-06-01T00:00:00&f=cf_covjson&parameter-name=${layers.join(
         ',',
-    )}`;
+    )}&f=${format}`;
 }
 
 async function fetchTimeseriesData({
@@ -71,21 +74,25 @@ async function fetchTimeseriesData({
     layers: ('temperature_2m' | 'wind_u_10m' | 'wind_v_10m')[];
     latitude: number;
     longitude: number;
-}): Promise<{ time: number; value: number }[]> {
+}): Promise<{ data: { time: number; value: number }[]; url: string }> {
     const url = createGfsPointTimeseriesUrlTemplate({
         layers,
         latitude,
         longitude,
+        format: 'cf_covjson',
     });
     const response = await fetch(url);
     const data = await response.json();
 
     const values = data.ranges[layers[0]].values as number[];
 
-    return values.map((value, index) => ({
-        time: new Date(data.domain.axes.t.values[index] + 'Z').getTime(),
-        value,
-    }));
+    return {
+        data: values.map((value, index) => ({
+            time: new Date(data.domain.axes.t.values[index] + 'Z').getTime(),
+            value,
+        })),
+        url,
+    };
 }
 
 /**
@@ -179,15 +186,77 @@ function TimeseriesDrawer({
     selectedPoint: { longitude: number; latitude: number };
     timeseriesData: { data: { time: number; value: number }[]; isLoading: boolean };
 }) {
+    const covjsonUrl = createGfsPointTimeseriesUrlTemplate({
+        layers: ['temperature_2m'],
+        latitude: selectedPoint.latitude,
+        longitude: selectedPoint.longitude,
+        format: 'cf_covjson',
+    });
+    const csvUrl = createGfsPointTimeseriesUrlTemplate({
+        layers: ['temperature_2m'],
+        latitude: selectedPoint.latitude,
+        longitude: selectedPoint.longitude,
+        format: 'csv',
+    });
+    const geojsonUrl = createGfsPointTimeseriesUrlTemplate({
+        layers: ['temperature_2m'],
+        latitude: selectedPoint.latitude,
+        longitude: selectedPoint.longitude,
+        format: 'geojson',
+    });
+    const parquetUrl = createGfsPointTimeseriesUrlTemplate({
+        layers: ['temperature_2m'],
+        latitude: selectedPoint.latitude,
+        longitude: selectedPoint.longitude,
+        format: 'parquet',
+    });
+    const ncUrl = createGfsPointTimeseriesUrlTemplate({
+        layers: ['temperature_2m'],
+        latitude: selectedPoint.latitude,
+        longitude: selectedPoint.longitude,
+        format: 'nc',
+    });
     return (
         <Drawer open={drawerOpen} modal={false} onOpenChange={setDrawerOpen}>
             <DrawerContent>
                 <DrawerHeader className="flex flex-row justify-between items-start align-middle w-full">
-                    <div className="flex flex-col items-start">
-                        <DrawerTitle>2 Meter Air Temperature (°C)</DrawerTitle>
-                        <p>
-                            Location: {selectedPoint?.latitude.toFixed(2)}°, {selectedPoint?.longitude.toFixed(2)}°
-                        </p>
+                    <div className="flex flex-col items-start gap-2">
+                        <DrawerTitle>
+                            <div className="flex flex-row items-center gap-2">
+                                <span>2 Meter Air Temperature (°C)</span>
+                                <span className="text-sm text-muted-foreground">
+                                    {selectedPoint?.latitude.toFixed(2)}°, {selectedPoint?.longitude.toFixed(2)}°
+                                </span>
+                            </div>
+                        </DrawerTitle>
+                        <div className="flex flex-row gap-2 items-center">
+                            <span className="text-sm text-muted-foreground">Download data as:</span>
+                            <Button variant="outline" asChild>
+                                <a href={covjsonUrl} target="_blank" rel="noopener noreferrer">
+                                    CovJSON
+                                </a>
+                            </Button>
+                            <Button variant="outline" asChild>
+                                <a href={csvUrl} target="_blank" rel="noopener noreferrer">
+                                    CSV
+                                </a>
+                            </Button>
+                            <Button variant="outline" asChild>
+                                <a href={geojsonUrl} target="_blank" rel="noopener noreferrer">
+                                    GeoJSON
+                                </a>
+                            </Button>
+                            <Button variant="outline" asChild>
+                                <a href={parquetUrl} target="_blank" rel="noopener noreferrer">
+                                    Parquet
+                                </a>
+                            </Button>
+                            <Button variant="outline" asChild>
+                                <a href={ncUrl} target="_blank" rel="noopener noreferrer">
+                                    NetCDF
+                                </a>
+                            </Button>
+                        </div>
                     </div>
                     <DrawerTrigger onClick={() => setDrawerOpen(false)}>Close</DrawerTrigger>
                 </DrawerHeader>
@@ -343,11 +412,11 @@ export default function Globe() {
                 drawerOpen={drawerOpen}
                 setDrawerOpen={setDrawerOpen}
                 selectedPoint={clickedPoint ?? { longitude: 0, latitude: 0 }}
-                timeseriesData={
-                    timeseriesDataIsLoading
-                        ? { data: [], isLoading: true }
-                        : { data: timeseriesData ?? [], isLoading: false }
-                }
+                timeseriesData={{
+                    data: timeseriesData?.data ?? [],
+                    isLoading: timeseriesDataIsLoading,
+                    url: timeseriesData?.url,
+                }}
             />
             <Map
                 initialViewState={{

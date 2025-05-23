@@ -233,7 +233,7 @@ function TimeseriesDrawer({
                                 </span>
                             </div>
                         </DrawerTitle>
-                        <div className="flex flex-row gap-2 items-center">
+                        <div className="flex flex-row gap-2 items-center flex-wrap">
                             <span className="text-sm text-muted-foreground">Download data as:</span>
                             <Button variant="outline" asChild>
                                 <a href={covjsonUrl} target="_blank" rel="noopener noreferrer">

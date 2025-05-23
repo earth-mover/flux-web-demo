@@ -1,6 +1,6 @@
-# Earthmover Flux Demo
+# Earthmover Flux Web App Demos
 
-A collection of demods how Flux APIs can be used to build web applications with Weather and Climate data.
+A collection of demos how Flux APIs can be used to build web applications with Weather and Climate data.
 
 ## Demos
 

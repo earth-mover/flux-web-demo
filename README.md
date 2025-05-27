@@ -20,6 +20,8 @@ All demos are built using the following technologies:
 
 [See the code](https://github.com/earth-mover/flux-web-demo/blob/main/src/demos/globe.tsx)
 
+Checkout the [source data](https://dynamical.org/catalog/noaa-gfs-analysis-hourly/) on [Arraylake](https://app.earthmover.io/earthmover-demos/dyanmical-gfs-analysis)
+
 A [MaplibreGL](https://maplibre.org/) Globe displaying a raster tile layer of GFS temperature data in Celsius. There is also a [DeckGL](https://deck.gl/) [wind vector layer](https://github.com/weatherlayers/weatherlayers-gl) displaying the animated wind particles.
 
 The globe is interactive and allows to click on a point to get a timeseries of temperature data. The timeseries is displayed in a drawer, and the data can be downloaded in a list of our currently supported formats.

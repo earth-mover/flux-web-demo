@@ -16,12 +16,30 @@ import { Badge } from './ui/badge';
 const DEMOS = [
     {
         icon: <Earth />,
-        title: 'GFS Globe',
-        path: '/gfs-globe',
+        title: 'WMS GFS Globe',
+        path: '/gfs-globe-wms',
         description:
-            'An interactive MaplibreGL Globe displaying GFS Temperature and Wind data. Click on the globe to view the timeseries of the temperature at the selected location.',
-        code: 'https://github.com/earth-mover/flux-web-demo/blob/main/src/demos/globe.tsx',
+            'An interactive MaplibreGL Globe displaying GFS Temperature and Wind data. Click on the globe to view the timeseries of the temperature at the selected location. Uses the flux WMS and EDR services',
+        code: 'https://github.com/earth-mover/flux-web-demo/blob/main/src/demos/gfs-globe-wms.tsx',
         tags: ['WMS', 'EDR', 'MapLibre', 'DeckGL'],
+    },
+    {
+        icon: <Earth />,
+        title: 'GFS Globe Tiles',
+        path: '/gfs-globe-tiles',
+        description:
+            'An interactive MaplibreGL Globe displaying GFS Temperature data. Click on the globe to view the timeseries of the temperature at the selected location. Uses the flux Tiles and EDR services',
+        code: 'https://github.com/earth-mover/flux-web-demo/blob/main/src/demos/gfs-globe-tiles.tsx',
+        tags: ['Tiles', 'EDR', 'MapLibre', 'DeckGL'],
+    },
+    {
+        icon: <Earth />,
+        title: 'HRRR TCC Tiles',
+        path: '/hrrr-tcc-tiles',
+        description:
+            'An interactive MaplibreGL Map displaying HRRR Total Cloud Cover Forecast. Uses the flux Tiles service',
+        code: 'https://github.com/earth-mover/flux-web-demo/blob/main/src/demos/hrrr-tcc-tiles.tsx',
+        tags: ['Tiles', 'EDR', 'MapLibre', 'DeckGL'],
     },
 ];
 

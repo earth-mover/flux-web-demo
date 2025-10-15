@@ -25,6 +25,15 @@ const DEMOS = [
     },
     {
         icon: <Earth />,
+        title: 'GFS Globe Tiles',
+        path: '/gfs-globe-tiles',
+        description:
+            'An interactive MaplibreGL Globe displaying GFS Temperature data. Click on the globe to view the timeseries of the temperature at the selected location. Uses the flux Tiles and EDR services',
+        code: 'https://github.com/earth-mover/flux-web-demo/blob/main/src/demos/gfs-globe-tiles.tsx',
+        tags: ['Tiles', 'EDR', 'MapLibre', 'DeckGL'],
+    },
+    {
+        icon: <Earth />,
         title: 'HRRR TCC Tiles',
         path: '/hrrr-tcc-tiles',
         description:

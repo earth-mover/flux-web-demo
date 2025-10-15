@@ -1,4 +1,4 @@
-import Map, { Layer, Marker, Source, useControl } from 'react-map-gl/maplibre';
+import Map, { Layer, Marker, Source } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';

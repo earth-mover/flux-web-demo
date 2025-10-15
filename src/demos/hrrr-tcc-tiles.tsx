@@ -1,4 +1,4 @@
-import Map, { Layer, Marker, Source, useControl } from 'react-map-gl/maplibre';
+import Map, { Layer, Source } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
@@ -71,37 +71,37 @@ function createHrrrPointTimeseriesUrlTemplate({
     )}&f=${format}`;
 }
 
-async function fetchTimeseriesData({
-    layers,
-    latitude,
-    longitude,
-    time,
-}: {
-    layers: 'tcc'[];
-    latitude: number;
-    longitude: number;
-    time: string;
-}): Promise<{ data: { time: number; value: number }[]; url: string }> {
-    const url = createHrrrPointTimeseriesUrlTemplate({
-        layers,
-        latitude,
-        longitude,
-        time,
-        format: 'cf_covjson',
-    });
-    const response = await fetch(url);
-    const data = await response.json();
+// async function fetchTimeseriesData({
+//     layers,
+//     latitude,
+//     longitude,
+//     time,
+// }: {
+//     layers: 'tcc'[];
+//     latitude: number;
+//     longitude: number;
+//     time: string;
+// }): Promise<{ data: { time: number; value: number }[]; url: string }> {
+//     const url = createHrrrPointTimeseriesUrlTemplate({
+//         layers,
+//         latitude,
+//         longitude,
+//         time,
+//         format: 'cf_covjson',
+//     });
+//     const response = await fetch(url);
+//     const data = await response.json();
 
-    const values = data.ranges[layers[0]].values as number[];
+//     const values = data.ranges[layers[0]].values as number[];
 
-    return {
-        data: values.map((value, index) => ({
-            time: new Date(data.domain.axes.t.values[index] + 'Z').getTime(),
-            value,
-        })),
-        url,
-    };
-}
+//     return {
+//         data: values.map((value, index) => ({
+//             time: new Date(data.domain.axes.t.values[index] + 'Z').getTime(),
+//             value,
+//         })),
+//         url,
+//     };
+// }
 
 function TimeseriesDrawer({
     drawerOpen,
@@ -291,16 +291,16 @@ export default function Globe() {
         return lat && lng ? { latitude: parseFloat(lat), longitude: parseFloat(lng) } : null;
     }, [searchParams]);
 
-    const { data: timeseriesData, isLoading: timeseriesDataIsLoading } = useQuery({
+    const { data: _timeseriesData, isLoading: timeseriesDataIsLoading } = useQuery({
         queryKey: ['timeseries', clickedPoint],
         queryFn: async () => {
             return null
-            return await fetchTimeseriesData({
-                layers: ['tcc'],
-                latitude: clickedPoint.latitude,
-                longitude: clickedPoint.longitude,
-                time,
-            });
+            // return await fetchTimeseriesData({
+            //     layers: ['tcc'],
+            //     latitude: clickedPoint.latitude,
+            //     longitude: clickedPoint.longitude,
+            //     time,
+            // });
         },
     });
 
@@ -331,7 +331,7 @@ export default function Globe() {
                 setDrawerOpen={setDrawerOpen}
                 selectedPoint={clickedPoint ?? { longitude: 0, latitude: 0 }}
                 timeseriesData={{
-                    data: timeseriesData?.data ?? [],
+                    data: [],
                     isLoading: timeseriesDataIsLoading,
                 }}
                 onClose={() => setSearchParams({})}

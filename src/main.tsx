@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import './index.css';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
-import Globe from './demos/globe';
+import WmsGlobe from './demos/wms-globe';
 import Root from './root';
 
 const queryClient = new QueryClient();
@@ -15,8 +15,8 @@ createRoot(document.getElementById('root')!).render(
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<Root />}>
-                        <Route path="/gfs-globe" element={<Globe />} />
-                        <Route path="/" element={<Navigate to="/gfs-globe" replace />} />
+                        <Route path="/gfs-globe-wms" element={<WmsGlobe />} />
+                        <Route path="/" element={<Navigate to="/gfs-globe-wms" replace />} />
                     </Route>
                 </Routes>
             </BrowserRouter>

@@ -16,11 +16,11 @@ import { Badge } from './ui/badge';
 const DEMOS = [
     {
         icon: <Earth />,
-        title: 'GFS Globe',
-        path: '/gfs-globe',
+        title: 'WMS GFS Globe',
+        path: '/gfs-globe-wms',
         description:
-            'An interactive MaplibreGL Globe displaying GFS Temperature and Wind data. Click on the globe to view the timeseries of the temperature at the selected location.',
-        code: 'https://github.com/earth-mover/flux-web-demo/blob/main/src/demos/globe.tsx',
+            'An interactive MaplibreGL Globe displaying GFS Temperature and Wind data. Click on the globe to view the timeseries of the temperature at the selected location. Uses the flux WMS service',
+        code: 'https://github.com/earth-mover/flux-web-demo/blob/main/src/demos/wms-globe.tsx',
         tags: ['WMS', 'EDR', 'MapLibre', 'DeckGL'],
     },
 ];

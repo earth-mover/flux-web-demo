@@ -1,4 +1,4 @@
-import Map, { Layer, Marker, Source } from 'react-map-gl/maplibre';
+import Map, { Layer, Source } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
@@ -268,7 +268,7 @@ function Legend({ time }: { time: string }) {
             <div className="flex flex-col gap-2">
                 <div className="flex flex-row gap-2 items-center justify-between py-2">
                     <div className="flex flex-col items-start">
-                        <span>2 Meter createGFSTilesUrlTemplate (K)</span>
+                        <span>2 Meter Temperature (K)</span>
                         <span className="text-sm text-muted-foreground">Valid: {time}</span>
                     </div>
                 </div>
@@ -319,9 +319,9 @@ export default function Globe() {
         }
     }, [drawerOpen]);
 
-    useEffect(() => {
-        setDrawerOpen(clickedPoint !== null);
-    }, [clickedPoint]);
+    // useEffect(() => {
+    //     setDrawerOpen(clickedPoint !== null);
+    // }, [clickedPoint]);
 
     return (
         <section className="flex flex-col flex-1">
@@ -378,7 +378,7 @@ export default function Globe() {
                 >
                     <Layer id="hrrr-t2m" type="raster" paint={{ 'raster-opacity': 0.6 }} />
                 </Source>
-                {clickedPoint && <Marker longitude={clickedPoint.longitude} latitude={clickedPoint.latitude} />}
+                {/*{clickedPoint && <Marker longitude={clickedPoint.longitude} latitude={clickedPoint.latitude} />}*/}
             </Map>
             <Legend time={time} />
         </section>

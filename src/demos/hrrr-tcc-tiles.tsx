@@ -282,7 +282,7 @@ export default function Globe() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [time, _setTime] = useState('2025-10-01T00:00:00Z');
     const [step, _setStep] = useState('0 hours');
-    const [colorPalette, _setColorPalette] = useState('Greys');
+    const [colorPalette, _setColorPalette] = useState('Blues');
     const [colorScaleRange, _setColorScaleRange] = useState<[number, number]>([0, 100]);
 
     const clickedPoint = useMemo(() => {

@@ -43,7 +43,9 @@ Checkout the source data on [Arraylake](https://app.earthmover.io/earthmover-pub
 
 A [MaplibreGL](https://maplibre.org/) Globe displaying a raster tile layer of GFS temperature data in Kelvin.
 
-This demo uses Flux [`Tiles`](https://docs.earthmover.io/flux/tiles) endpoints to fetch the data
+The globe is interactive and allows to click on a point to get a timeseries of temperature data. The timeseries is displayed in a drawer, and the data can be downloaded in a list of our currently supported formats.
+
+This demo uses Flux [`Tiles`](https://docs.earthmover.io/flux/tiles) and [`EDR`](https://docs.earthmover.io/flux/edr) endpoints to fetch the data
 
 ### HRRR Total Cloud Cover with Tiles
 

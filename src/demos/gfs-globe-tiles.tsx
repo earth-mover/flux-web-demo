@@ -1,4 +1,4 @@
-import Map, { Layer, Source } from 'react-map-gl/maplibre';
+import Map, { Layer, Marker, Source } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
@@ -66,7 +66,7 @@ function createGFSPointTimeseriesUrlTemplate({
     format: 'cf_covjson' | 'csv' | 'nc' | 'geojson' | 'parquet';
     time: string;
 }): string {
-    return `https://compute.earthmover.io/v1/services/edr/earthmover-public/gfs/main/solar/edr/position?coords=POINT(${longitude}%20${latitude})&datetime=${time}&f=cf_covjson&parameter-name=${layers.join(
+    return `https://compute.earthmover.io/v1/services/edr/earthmover-public/gfs/main/solar/edr/position?coords=POINT(${longitude}%20${latitude})&datetime=${time.slice(0, -1)}&f=cf_covjson&parameter-name=${layers.join(
         ',',
     )}&f=${format}`;
 }
@@ -93,10 +93,12 @@ async function fetchTimeseriesData({
     const data = await response.json();
 
     const values = data.ranges[layers[0]].values as number[];
+    const baseTime = new Date(data.domain.axes.t.values[0] + 'Z').getTime();
+    const stepValues = data.domain.axes.step.values as number[];
 
     return {
         data: values.map((value, index) => ({
-            time: new Date(data.domain.axes.t.values[index] + 'Z').getTime(),
+            time: baseTime + stepValues[index] * 1000,
             value,
         })),
         url,
@@ -161,7 +163,7 @@ function TimeseriesDrawer({
                     <div className="flex flex-col items-start gap-2">
                         <DrawerTitle>
                             <div className="flex flex-row items-center gap-2">
-                                <span>Total Cloud Cover (%)</span>
+                                <span>2 Meter Temperature (K)</span>
                                 <span className="text-sm text-muted-foreground">
                                     {selectedPoint?.latitude.toFixed(2)}°, {selectedPoint?.longitude.toFixed(2)}°
                                 </span>
@@ -319,9 +321,9 @@ export default function Globe() {
         }
     }, [drawerOpen]);
 
-    // useEffect(() => {
-    //     setDrawerOpen(clickedPoint !== null);
-    // }, [clickedPoint]);
+    useEffect(() => {
+        setDrawerOpen(clickedPoint !== null);
+    }, [clickedPoint]);
 
     return (
         <section className="flex flex-col flex-1">
@@ -378,7 +380,7 @@ export default function Globe() {
                 >
                     <Layer id="hrrr-t2m" type="raster" paint={{ 'raster-opacity': 0.6 }} />
                 </Source>
-                {/*{clickedPoint && <Marker longitude={clickedPoint.longitude} latitude={clickedPoint.latitude} />}*/}
+                {clickedPoint && <Marker longitude={clickedPoint.longitude} latitude={clickedPoint.latitude} />}
             </Map>
             <Legend time={time} />
         </section>
